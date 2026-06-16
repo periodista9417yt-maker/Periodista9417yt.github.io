@@ -3,12 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirigiendo a Roblox...</title>
-    
-    <!-- Este es el deeplink que abre la app de Roblox automaticamente -->
-    <meta http-equiv="refresh" content="0; url=roblox://placeId=105267492031116&launchData=%7B%22roomId%22%3A%202%7D">
+    <title>Redirección de Juego</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; marginTop: 50px; background: #1a1a1a; color: white; }
+        .loader { border: 16px solid #f3f3f3; border-top: 16px solid #3498db; border-radius: 50%; width: 60px; height: 60px; animation: spin 2s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
-    <p>Si no se abre automaticamente, <a href="roblox://placeId=105267492031116&launchData=%7B%22roomId%22%3A%202%7D">haz clic aqui para entrar al juego</a>.</p>
+
+    <h2>Verificando servidores disponibles...</h2>
+    <div class="loader"></div>
+    <p id="status">Analizando lista de juegos...</p>
+
+    <script>
+        // CONFIGURACIÓN: Reemplaza con tus datos
+        const GAME_IDS =; // Pon aquí tus IDs en orden de prioridad
+        const DISCORD_WEBHOOK_URL = "TU_URL_DE_WEBHOOK_AQUÍ";
+
+        // API Proxy de Roblox para evitar problemas de CORS en navegadores
+        const ROBLOX_API_URL = "https://roblox.com";
+        const PROXY_URL = "https://corsproxy.io?"; // Permite consultar la API desde GitHub Pages
+
+        async function checkGames() {
+            const statusText = document.getElementById("status");
+            
+            // Unimos los IDs separados por comas para consultar la API en una sola petición
+            const url = `${PROXY_URL}${encodeURIComponent(ROBLOX_API_URL + GAME_IDS.join(','))}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (!data.data || data.data.length === 0) {
+                    throw new Error("No se obtuvieron datos de la API");
+                }
+
+                // Creamos un mapa para acceder rápido al estado de cada universo por su ID
+                const gamesMap = {};
+                data.data.forEach(game => {
+                    gamesMap[game.id] = game.createVIPServerAllowed; // true si es público/accesible
+                });
+
+                // Recorremos en el orden estricto de tu lista
+                for (const id of GAME_IDS) {
+                    statusText.innerText = `Verificando ID: ${id}...`;
+                    
+                    // Si el juego está activo/público según la API de Roblox
+                    if (gamesMap[id] === true) {
+                        statusText.innerText = "¡Juego encontrado! Redirigiendo...";
+                        // Deep link para abrir la app de Roblox directamente
+                        window.location.href = `roblox://experiences/start?placeId=${id}`;
+                        return; 
+                    }
+                }
+
+                // Si termina el ciclo y ninguno cumplió
+                statusText.innerText = "Ningún juego está público. Notificando a Discord...";
+                await notifyDiscord();
+
+            } catch (error) {
+                console.error(error);
+                statusText.innerText = "Error al conectar con la API de Roblox.";
+            }
+        }
+
+        async function notifyDiscord() {
+            try {
+                await fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: "Roblox Status Bot",
+                        content: "⚠️ **Alerta:** Ninguno de los juegos de la lista se encuentra configurado como público actualmente."
+                    })
+                });
+            } catch (err) {
+                console.error("Error enviando a Discord:", err);
+            }
+        }
+
+        // Iniciar el proceso al cargar la página
+        window.onload = checkGames;
+    </script>
 </body>
 </html>
