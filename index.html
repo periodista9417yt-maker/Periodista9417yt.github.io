@@ -1,33 +1,95 @@
 <!DOCTYPE html>
 <html>
+<head>
+<meta charset="utf-8">
+<title>Redireccionando...</title>
+</head>
 <body>
+
+<h2>Buscando juego disponible...</h2>
+
+<script src="config.js"></script>
+
 <script>
 
-(async () => {
+async function isPlacePublic(placeId) {
+    try {
 
-    const response = await fetch(
-        "https://tu-worker.workers.dev/redirect"
-    );
+        const response = await fetch(
+            `https://games.roblox.com/v1/games/multiget-place-details?placeIds=${placeId}`
+        );
 
-    const data = await response.json();
+        if (!response.ok)
+            return false;
 
-    if (!data.success) {
-        document.body.innerHTML =
-            "No hay juegos disponibles.";
+        const data = await response.json();
+
+        if (!data || !data[0])
+            return false;
+
+        return data[0].isPlayable === true;
+
+    } catch {
+        return false;
+    }
+}
+
+async function updateStatus(active) {
+
+    try {
+
+        await fetch(WORKER_URL + "/status", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                active: active
+            })
+        });
+
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function findActivePlace() {
+
+    let activePlace = null;
+
+    for (const placeId of PLACES) {
+
+        const publicGame = await isPlacePublic(placeId);
+
+        if (publicGame) {
+            activePlace = placeId;
+            break;
+        }
+    }
+
+    if (activePlace) {
+
+        await updateStatus(true);
+
+        const launchData = encodeURIComponent(
+            JSON.stringify(DEEP_LINK_DATA)
+        );
+
+        window.location.href =
+            `roblox://placeId=${activePlace}&launchData=${launchData}`;
+
         return;
     }
 
-    const launchData = encodeURIComponent(
-        JSON.stringify({
-            roomId: 2
-        })
-    );
+    await updateStatus(false);
 
-    location.href =
-        `roblox://placeId=${data.placeId}&launchData=${launchData}`;
+    document.body.innerHTML =
+        "<h2>No hay juegos disponibles actualmente.</h2>";
+}
 
-})();
+findActivePlace();
 
 </script>
+
 </body>
 </html>
