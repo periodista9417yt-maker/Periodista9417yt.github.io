@@ -1,94 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>Redireccionando...</title>
+    <meta charset="UTF-8">
+    <title>Buscando juego...</title>
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            background:#111;
+            color:white;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+            margin:0;
+            text-align:center;
+        }
+
+        #status{
+            font-size:24px;
+        }
+    </style>
 </head>
 <body>
 
-<h2>Buscando juego disponible...</h2>
-
-<script src="config.js"></script>
+<div id="status">Buscando juego disponible...</div>
 
 <script>
+const PLACE_IDS = [
+    89741670064748,
+    123456789012345,
+    987654321098765
+];
 
-async function isPlacePublic(placeId) {
-    try {
+// URL de tu Cloudflare Worker
+const WORKER_URL = "https://obtenerdatoscloud.periodista9417yt.workers.dev/";
 
-        const response = await fetch(
-            `https://games.roblox.com/v1/games/multiget-place-details?placeIds=${placeId}`
-        );
+async function buscarJuego() {
 
-        if (!response.ok)
-            return false;
+    for (const placeId of PLACE_IDS) {
 
-        const data = await response.json();
+        try {
 
-        if (!data || !data[0])
-            return false;
+            const response = await fetch(
+                `${WORKER_URL}?placeId=${placeId}`
+            );
 
-        return data[0].isPlayable === true;
+            const data = await response.json();
 
-    } catch {
-        return false;
-    }
-}
+            if (data.available === true) {
 
-async function updateStatus(active) {
+                const launchData = encodeURIComponent(
+                    JSON.stringify({
+                        roomId: 2
+                    })
+                );
 
-    try {
+                window.location.href =
+                    `roblox://placeId=${placeId}&launchData=${launchData}`;
 
-        await fetch(WORKER_URL + "/status", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                active: active
-            })
-        });
+                return;
+            }
 
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-async function findActivePlace() {
-
-    let activePlace = null;
-
-    for (const placeId of PLACES) {
-
-        const publicGame = await isPlacePublic(placeId);
-
-        if (publicGame) {
-            activePlace = placeId;
-            break;
+        } catch (err) {
+            console.error(err);
         }
     }
 
-    if (activePlace) {
-
-        await updateStatus(true);
-
-        const launchData = encodeURIComponent(
-            JSON.stringify(DEEP_LINK_DATA)
-        );
-
-        window.location.href =
-            `roblox://placeId=${activePlace}&launchData=${launchData}`;
-
-        return;
-    }
-
-    await updateStatus(false);
-
-    document.body.innerHTML =
-        "<h2>No hay juegos disponibles actualmente.</h2>";
+    document.getElementById("status").textContent =
+        "No se encontraron más juegos";
 }
 
-findActivePlace();
-
+buscarJuego();
 </script>
 
 </body>
