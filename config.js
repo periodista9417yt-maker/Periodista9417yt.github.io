@@ -5,7 +5,7 @@ const PLACES = [
 ];
 
 // URL de tu Worker
-const WORKER_URL = "https://tu-worker.tudominio.workers.dev";
+const WORKER_URL = "https://obtenerdatoscloud.periodista9417yt.workers.dev/";
 
 // Datos opcionales para launchData
 const DEEP_LINK_DATA = {
