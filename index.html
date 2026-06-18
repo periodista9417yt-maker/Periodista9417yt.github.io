@@ -1,75 +1,82 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Buscando juego...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirección de Roblox</title>
     <style>
-        body{
+        body {
             font-family: Arial, sans-serif;
-            background:#111;
-            color:white;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            height:100vh;
-            margin:0;
-            text-align:center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #1a1a1a;
+            color: #ffffff;
         }
-
-        #status{
-            font-size:24px;
+        #status {
+            font-size: 24px;
+            text-align: center;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
 
-<div id="status">Buscando juego disponible...</div>
+    <div id="status">Verificando servidores disponibles...</div>
 
-<script>
-const PLACE_IDS = [
-    113471798225716
-];
+    <script>
+        // 1. Reemplaza estos números con tu lista de IDs de Roblox en orden de prioridad
+        const placeIds =[89741670064748]; 
+        
+        // Proxy público para evitar bloqueos de CORS en el navegador
+        const proxyUrl = "https://allorigins.win";
 
-// URL de tu Cloudflare Worker
-const WORKER_URL = "https://obtenerdatoscloud.periodista9417yt.workers.dev/";
+        async function checkPlaces() {
+            const statusElement = document.getElementById("status");
 
-async function buscarJuego() {
+            for (let id of placeIds) {
+                try {
+                    statusElement.innerText = `Verificando juego: ${id}...`;
 
-    for (const placeId of PLACE_IDS) {
+                    // Consultamos la API de universos de Roblox a través del proxy
+                    const apiUrl = encodeURIComponent(`https://roblox.com{id}`);
+                    const response = await fetch(`${proxyUrl}${apiUrl}`);
+                    
+                    if (!response.ok) continue;
 
-        try {
+                    const data = await response.json();
+                    const rbxData = JSON.parse(data.contents);
 
-            const response = await fetch(
-                `${WORKER_URL}?placeId=${placeId}`
-            );
-
-            const data = await response.json();
-
-            if (data.available === true) {
-
-                const launchData = encodeURIComponent(
-                    JSON.stringify({
-                        roomId: 2
-                    })
-                );
-
-                window.location.href =
-                    `roblox://placeId=${placeId}&launchData=${launchData}`;
-
-                return;
+                    // Validamos que el juego exista y tenga un estado válido (no baneado/no privado)
+                    if (rbxData && rbxData.length > 0) {
+                        const place = rbxData[0];
+                        
+                        // status: "Playable" significa que el juego está público y disponible
+                        if (place.status === "Playable") {
+                            statusElement.innerText = "¡Juego encontrado! Redirigiendo...";
+                            
+                            // 2. Construimos el deep link con tu launchData personalizado
+                            const deepLink = `roblox://placeId=${id}&launchData=%7B%22roomId%22%3A%202%7D`;
+                            
+                            // Ejecutamos la redirección automática
+                            window.location.href = deepLink;
+                            return; // Detiene la búsqueda al encontrar el primero disponible
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error verificando el ID ${id}:`, error);
+                }
             }
 
-        } catch (err) {
-            console.error(err);
+            // Si el bucle termina y ninguno fue "Playable"
+            statusElement.innerText = "no se encontraron mas juegos";
         }
-    }
 
-    document.getElementById("status").textContent =
-        "No se encontraron más juegos";
-}
-
-buscarJuego();
-</script>
+        // Iniciar la verificación al cargar la página
+        window.onload = checkPlaces;
+    </script>
 
 </body>
 </html>
