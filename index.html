@@ -1,12 +1,15 @@
 <script>
-const ids = [
-    89741670064748,
-    12345678901234
-].join(",");
+const miLista = ['89741670064748', 'elemento2', 'elemento3'];
 
-location.href =
-`https://obtenerdatoscloud.periodista9417yt.workers.dev/check?ids=${ids}`;
-then(r => r.text())
-then(console.log)
-catch(console.error);
+fetch('https://obtenerdatoscloud.periodista9417yt.workers.dev', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ lista: miLista })
+})
+.then(response => response.json())
+.then(data => console.log('Éxito:', data))
+.catch(error => console.error('Error:', error));
+
 </script>
