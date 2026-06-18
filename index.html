@@ -27,11 +27,18 @@
     <div id="status">Verificando servidores disponibles...</div>
 
     <script>
-        // 1. Reemplaza estos números con tu lista de IDs de Roblox en orden de prioridad
-        const placeIds = [89741670064748, 113471798225716]
+        // Pon tus IDs aquí (en orden de prioridad)
+        const placeIds = [89741670064748]; 
         
-        // Proxy público para evitar bloqueos de CORS en el navegador
+        // Proxy público para saltar el bloqueo de CORS del navegador
         const proxyUrl = "https://allorigins.win";
+
+        async function fetchPublicApi(url) {
+            const response = await fetch(`${proxyUrl}${encodeURIComponent(url)}`);
+            if (!response.ok) return null;
+            const data = await response.json();
+            return JSON.parse(data.contents);
+        }
 
         async function checkPlaces() {
             const statusElement = document.getElementById("status");
@@ -40,41 +47,46 @@
                 try {
                     statusElement.innerText = `Verificando juego: ${id}...`;
 
-                    // Consultamos la API de universos de Roblox a través del proxy
-                    const apiUrl = encodeURIComponent(`https://roblox.com{id}`);
-                    const response = await fetch(`${proxyUrl}${apiUrl}`);
+                    // Paso 1: Conseguir el Universe ID a partir del Place ID (Público y sin login)
+                    const universeUrl = `https://roblox.com{id}/universe`;
+                    const universeData = await fetchPublicApi(universeUrl);
                     
-                    if (!response.ok) continue;
+                    if (!universeData || !universeData.universeId) {
+                        console.log(`No se pudo obtener el universo para el ID ${id} (Puede estar borrado)`);
+                        continue; 
+                    }
 
-                    const data = await response.json();
-                    const rbxData = JSON.parse(data.contents);
+                    const universeId = universeData.universeId;
 
-                    // Validamos que el juego exista y tenga un estado válido (no baneado/no privado)
-                    if (rbxData && rbxData.length > 0) {
-                        const place = rbxData[0];
-                        
-                        // status: "Playable" significa que el juego está público y disponible
-                        if (place.status === "Playable") {
+                    // Paso 2: Consultar si el Universo está activo o público
+                    const gamesUrl = `https://roblox.com{universeId}`;
+                    const gamesData = await fetchPublicApi(gamesUrl);
+
+                    if (gamesData && gamesData.data && gamesData.data.length > 0) {
+                        const gameInfo = gamesData.data[0];
+
+                        // Si el juego existe y NO está bajo revisión o privado
+                        // (Verificamos que devuelva información básica que valide que está activo)
+                        if (gameInfo && gameInfo.id) {
                             statusElement.innerText = "¡Juego encontrado! Redirigiendo...";
                             
-                            // 2. Construimos el deep link con tu launchData personalizado
+                            // Construir el deep link
                             const deepLink = `roblox://placeId=${id}&launchData=%7B%22roomId%22%3A%202%7D`;
                             
-                            // Ejecutamos la redirección automática
+                            // Redirección
                             window.location.href = deepLink;
-                            return; // Detiene la búsqueda al encontrar el primero disponible
+                            return; 
                         }
                     }
                 } catch (error) {
-                    console.error(`Error verificando el ID ${id}:`, error);
+                    console.error(`Error procesando el ID ${id}:`, error);
                 }
             }
 
-            // Si el bucle termina y ninguno fue "Playable"
+            // Si pasa por todos y ninguno responde exitosamente
             statusElement.innerText = "no se encontraron mas juegos";
         }
 
-        // Iniciar la verificación al cargar la página
         window.onload = checkPlaces;
     </script>
 
