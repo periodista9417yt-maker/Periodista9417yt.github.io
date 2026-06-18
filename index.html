@@ -1,18 +1,11 @@
 <script>
-const PLACE_IDS = [
+const ids = [
     89741670064748,
     12345678901234
-];
+].join(",");
 
-fetch("https://obtenerdatoscloud.periodista9417yt.workers.dev/", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-        placeIds: PLACE_IDS
-    })
-})
+location.href =
+`https://TU-WORKER.workers.dev/check?ids=${ids}`;
 .then(r => r.text())
 .then(console.log)
 .catch(console.error);
