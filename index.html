@@ -1,94 +1,42 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirección de Roblox</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #1a1a1a;
-            color: #ffffff;
+<script>
+
+const PLACE_IDS = [
+    89741670064748,
+    12345678901234,
+    55555555555555
+];
+
+(async () => {
+
+    const response = await fetch(
+        "https://tu-worker.workers.dev",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                placeIds: PLACE_IDS
+            })
         }
-        #status {
-            font-size: 24px;
-            text-align: center;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
+    );
 
-    <div id="status">Verificando servidores disponibles...</div>
+    const data = await response.json();
 
-    <script>
-        // Pon tus IDs aquí (en orden de prioridad)
-        const placeIds = [89741670064748]; 
-        
-        // Proxy público para saltar el bloqueo de CORS del navegador
-        const proxyUrl = "https://allorigins.win";
+    if(data.available){
 
-        async function fetchPublicApi(url) {
-            const response = await fetch(`${proxyUrl}${encodeURIComponent(url)}`);
-            if (!response.ok) return null;
-            const data = await response.json();
-            return JSON.parse(data.contents);
-        }
+        const deeplink =
+        `roblox://placeId=${data.placeId}&launchData=%7B%22roomId%22%3A2%7D`;
 
-        async function checkPlaces() {
-            const statusElement = document.getElementById("status");
+        location.href = deeplink;
 
-            for (let id of placeIds) {
-                try {
-                    statusElement.innerText = `Verificando juego: ${id}...`;
+    } else {
 
-                    // Paso 1: Conseguir el Universe ID a partir del Place ID (Público y sin login)
-                    const universeUrl = `https://roblox.com{id}/universe`;
-                    const universeData = await fetchPublicApi(universeUrl);
-                    
-                    if (!universeData || !universeData.universeId) {
-                        console.log(`No se pudo obtener el universo para el ID ${id} (Puede estar borrado)`);
-                        continue; 
-                    }
+        document.body.innerHTML =
+        "<h1>No hay juegos disponibles</h1>";
 
-                    const universeId = universeData.universeId;
+    }
 
-                    // Paso 2: Consultar si el Universo está activo o público
-                    const gamesUrl = `https://roblox.com{universeId}`;
-                    const gamesData = await fetchPublicApi(gamesUrl);
+})();
 
-                    if (gamesData && gamesData.data && gamesData.data.length > 0) {
-                        const gameInfo = gamesData.data[0];
-
-                        // Si el juego existe y NO está bajo revisión o privado
-                        // (Verificamos que devuelva información básica que valide que está activo)
-                        if (gameInfo && gameInfo.id) {
-                            statusElement.innerText = "¡Juego encontrado! Redirigiendo...";
-                            
-                            // Construir el deep link
-                            const deepLink = `roblox://placeId=${id}&launchData=%7B%22roomId%22%3A%202%7D`;
-                            
-                            // Redirección
-                            window.location.href = deepLink;
-                            return; 
-                        }
-                    }
-                } catch (error) {
-                    console.error(`Error procesando el ID ${id}:`, error);
-                }
-            }
-
-            // Si pasa por todos y ninguno responde exitosamente
-            statusElement.innerText = "no se encontraron mas juegos";
-        }
-
-        window.onload = checkPlaces;
-    </script>
-
-</body>
-</html>
+</script>
