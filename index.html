@@ -5,7 +5,7 @@ const ids = [
 ].join(",");
 
 location.href =
-`https://TU-WORKER.workers.dev/check?ids=${ids}`;
+`https://obtenerdatoscloud.periodista9417yt.workers.dev/check?ids=${ids}`;
 .then(r => r.text())
 .then(console.log)
 .catch(console.error);
