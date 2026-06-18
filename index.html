@@ -1,19 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Launcher Roblox</title>
+</head>
+<body>
+
+<h2 id="status">Buscando juego disponible...</h2>
+
 <script>
+
+const WORKER_URL = "https://obtenerdatoscloud.periodista9417yt.workers.dev";
+
 const PLACE_IDS = [
     89741670064748,
-    12345678901234
+    12345678901234,
+    23456789012345
 ];
 
-fetch("https://obtenerdatoscloud.periodista9417yt.workers.dev", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-        placeIds: PLACE_IDS
-    })
-})
-.then(r => r.text())
-.then(console.log)
-.catch(console.error);
+(async () => {
+
+    try {
+
+        const res = await fetch(WORKER_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                placeIds: PLACE_IDS
+            })
+        });
+
+        const data = await res.json();
+
+        console.log("RESPUESTA WORKER:", data);
+
+        if (data.available) {
+
+            const deeplink =
+                `roblox://placeId=${data.placeId}&launchData=%7B%22roomId%22%3A2%7D`;
+
+            window.location.href = deeplink;
+
+        } else {
+
+            document.getElementById("status").innerText =
+                "No hay juegos disponibles";
+
+        }
+
+    } catch (err) {
+
+        console.error(err);
+
+        document.getElementById("status").innerText =
+            "Error conectando con servidor";
+
+    }
+
+})();
+
 </script>
+
+</body>
+</html>
