@@ -1,42 +1,19 @@
 <script>
-
 const PLACE_IDS = [
     89741670064748,
-    12345678901234,
-    55555555555555
+    12345678901234
 ];
 
-(async () => {
-
-    const response = await fetch(
-        "https://obtenerdatoscloud.periodista9417yt.workers.dev",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                placeIds: PLACE_IDS
-            })
-        }
-    );
-
-    const data = await response.json();
-
-    if(data.available){
-
-        const deeplink =
-        `roblox://placeId=${data.placeId}&launchData=%7B%22roomId%22%3A2%7D`;
-
-        location.href = deeplink;
-
-    } else {
-
-        document.body.innerHTML =
-        "<h1>No hay juegos disponibles</h1>";
-
-    }
-
-})();
-
+fetch("https://obtenerdatoscloud.periodista9417yt.workers.dev/", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+        placeIds: PLACE_IDS
+    })
+})
+.then(r => r.text())
+.then(console.log)
+.catch(console.error);
 </script>
